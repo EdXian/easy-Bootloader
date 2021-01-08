@@ -120,9 +120,9 @@
           <AcmeProjectActionInfo Action="File" Source="hri/hri_tsens_c21.h" IsConfig="false" Hash="OFh3vm9bu5bqLHs8A9r6tA" />
           <AcmeProjectActionInfo Action="File" Source="hri/hri_wdt_c21.h" IsConfig="false" Hash="Mv9f3Eq4CdnYzB5ovab7Ew" />
           <AcmeProjectActionInfo Action="File" Source="edbg_uart_example.c" IsConfig="false" Hash="JvCE3M5aiEKhj0nTpcEs4Q" />
-          <AcmeProjectActionInfo Action="File" Source="driver_init.c" IsConfig="false" Hash="7l731dPi4NMKVhJiUhPjZQ" />
+          <AcmeProjectActionInfo Action="File" Source="driver_init.c" IsConfig="false" Hash="INjbDAJq0EweWk5VallTqw" />
           <AcmeProjectActionInfo Action="File" Source="driver_init.h" IsConfig="false" Hash="HaMldUFXMDCeZiwJ22wpUA" />
-          <AcmeProjectActionInfo Action="File" Source="atmel_start_pins.h" IsConfig="false" Hash="dmbLIzkGVlkmAhDG5yU/0A" />
+          <AcmeProjectActionInfo Action="File" Source="atmel_start_pins.h" IsConfig="false" Hash="2ffxsSf1fvjYZlzTshFszA" />
           <AcmeProjectActionInfo Action="File" Source="examples/driver_examples.h" IsConfig="false" Hash="qdqML/+hbqhfdAm3Vw8x1A" />
           <AcmeProjectActionInfo Action="File" Source="examples/driver_examples.c" IsConfig="false" Hash="Mm8KI4W+mP3LWh0HeEv6aQ" />
           <AcmeProjectActionInfo Action="File" Source="config/hpl_divas_config.h" IsConfig="false" Hash="guqltsUm9QXCxoea3f+S6g" />

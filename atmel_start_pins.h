@@ -22,6 +22,7 @@
 #define GPIO_PIN_FUNCTION_H 7
 #define GPIO_PIN_FUNCTION_I 8
 
+#define busy_pin GPIO(GPIO_PORTA, 12)
 #define boot_pin GPIO(GPIO_PORTA, 13)
 #define LED0 GPIO(GPIO_PORTA, 15)
 #define PA17 GPIO(GPIO_PORTA, 17)

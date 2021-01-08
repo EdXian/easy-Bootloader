@@ -53,6 +53,20 @@ void system_init(void)
 {
 	init_mcu();
 
+	// GPIO on PA12
+
+	gpio_set_pin_level(busy_pin,
+	                   // <y> Initial level
+	                   // <id> pad_initial_level
+	                   // <false"> Low
+	                   // <true"> High
+	                   true);
+
+	// Set pin direction to output
+	gpio_set_pin_direction(busy_pin, GPIO_DIRECTION_OUT);
+
+	gpio_set_pin_function(busy_pin, GPIO_PIN_FUNCTION_OFF);
+
 	// GPIO on PA13
 
 	// Set pin direction to input

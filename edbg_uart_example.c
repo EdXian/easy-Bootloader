@@ -12,7 +12,7 @@
 #define BL_USART_IO   EDBG_COM
 #define IS_BOOT_MODE (pin_mode == BOOT_MODE)
 #define BOOT_PIN boot_pin
-
+#define BUSY_PIN busy_pin
 
 #define BOOTLOADER_VERSION						"v1.00\n"
 #define BOOTLOADER_TIME							""__DATE__" "__TIME__"\n"
@@ -35,11 +35,17 @@ do {                                \
 void uart_recv(uint8_t* str,uint16_t len);
 uint8_t message_decode(uint8_t* buf,uint8_t msg_id);
 uint8_t packet_parser(uint8_t* buf,uint8_t data,parse_state_t* ps);
+
+void bootloader_handle_getcid_cmd(bl_get_id_t cmd);
+void bootloader_handle_getver_cmd(bl_get_ver_t cmd);
 void bootloader_handle_mem_write_cmd(bl_mem_write_t cmd);
 void bootloader_handle_mem_read_cmd(bl_mem_read_t cmd);
+void bootloader_handle_reset_cmd(bl_reset_t cmd);
+
+
 volatile uint32_t sp;
 uint8_t flash_read_buf[200];
-uint8_t data[PACK_LEN];
+uint8_t pdata[PACK_LEN];
 uint8_t buf;
 //gpio_toggle_pin_level(LED0);
 parse_state_t ps;
@@ -51,8 +57,8 @@ bl_get_ver_t	get_ver_cmd;	  //ok
 bl_get_id_t		get_id_cmd;       //ok
 bl_jump_app_t	jump_app_cmd;	  //ok
 bl_mem_erase_t	mem_erase_cmd;    //ok
-bl_mem_write_t	mem_write_cmd;    //ok
-bl_mem_read_t	mem_read_cmd;     //ok
+bl_mem_write_t	mem_write_cmd;    //test ok
+bl_mem_read_t	mem_read_cmd;     //test ok
 bl_reset_t      reset_cmd;		  //ok
 bl_verify_t		verify_cmd;		  //ok
 
@@ -62,7 +68,7 @@ header_t head;
 
 
 uint8_t pin_mode;
-
+uint8_t cmd[]={0x30, 0x55, 0x05, 0x03, 0x5d, 0x00, 0x00, 0x00};
 int main(void)
 {
 	uint8_t recv_char;
@@ -74,48 +80,60 @@ int main(void)
 	pin_mode = gpio_get_pin_level(BOOT_PIN); //ensure pin mode
 	pin_mode = gpio_get_pin_level(BOOT_PIN);
 	
-
-	bl_verify_encode(NULL,&verify_cmd,sizeof(verify_cmd));
-	memcpy(test_data,&verify_cmd,sizeof(verify_cmd));
 	
-	mem_write_cmd.start_addr = 0x6000;
+	bl_get_ver_encode(NULL,&get_ver_cmd,sizeof(get_ver_cmd));
+	bl_get_id_encode(NULL,&get_id_cmd,sizeof(get_id_cmd));
+	
+	//bl_verify_encode(NULL,&verify_cmd,sizeof(verify_cmd));
+	//memcpy(test_data,&verify_cmd,sizeof(verify_cmd));
+	/*
+	mem_write_cmd.start_addr = 0x4000;
 	mem_write_cmd.length = 128;
 	for (uint8_t i=0;i<128;i++)
 	{
 		mem_write_cmd.data[i] = i;
 	}
-	
-
 	bl_mem_write_encode(NULL,&mem_write_cmd,sizeof(mem_write_cmd));
 	memcpy(test_data,&mem_write_cmd,sizeof(mem_write_cmd));
+	*/
+	
+	mem_read_cmd.start_addr = 0x4000;
+	mem_read_cmd.end_addr = 0x4080;
+	bl_mem_read_encode(NULL,&mem_read_cmd,sizeof(mem_read_cmd));
+	
+	
 	
 	pin_mode = gpio_get_pin_level(BOOT_PIN); //ensure pin mode
 	pin_mode = gpio_get_pin_level(BOOT_PIN);
-	
+	memset(pdata,0,200);
 	while (1)
 	{
 		pin_mode = gpio_get_pin_level(BOOT_PIN);
 		if(IS_BOOT_MODE){
-				memset(data,0,200);
-				for(uint8_t i=0;i<sizeof(mem_write_cmd);i++){
-					buf = test_data[i];
-					//uart_recv(&test_data[i] , 1);
-					msg_id = packet_parser(data,buf,&ps);
-					message_decode(data,msg_id);
-				}
-				mem_read_cmd.start_addr = 0x6000;
-				mem_read_cmd.end_addr = 0x6080;
-				bl_mem_read_encode(NULL,&mem_read_cmd, sizeof(mem_read_cmd));
-				memcpy(test_data, &mem_read_cmd, sizeof(mem_read_cmd));
-				while (1)
+			/*
+			memset(pdata,0,200);
+			
+			for(uint8_t i=0;i<sizeof(cmd);i++){
+				buf = cmd[i];
+				//uart_recv(&test_data[i] , 1);
+				msg_id = packet_parser(pdata,buf,&ps);
+				if (msg_id)
 				{
-					for(uint8_t i=0;i<sizeof(mem_read_cmd);i++){
-						buf = test_data[i];
-						//uart_recv(&test_data[i] , 1);
-						msg_id = packet_parser(data,buf,&ps);
-						message_decode(data,msg_id);
-					}
+				message_decode(pdata,msg_id);	
 				}
+				
+			}*/
+			
+			uart_recv(&buf,1);
+			msg_id = packet_parser(pdata,buf,&ps);
+			if (msg_id)
+			{
+				gpio_set_pin_level(BUSY_PIN,false);
+				message_decode(pdata,msg_id);
+				memset(pdata,0,200);
+				sp+=1;
+				gpio_set_pin_level(BUSY_PIN,true);
+			}
 				
 			//can_bootloader_run
 			//spi_bootloader_run
@@ -127,12 +145,12 @@ int main(void)
 }
 
 void uart_bootloader_run(void){
-	memset(data,0,200);
+	memset(pdata,0,200);
 	for(uint8_t i=0;i<sizeof(mem_erase_cmd);i++){
 		buf = test_data[i];
 		//uart_recv(&test_data[i] , 1);
-		msg_id = packet_parser(data,buf,&ps);
-		message_decode(data,msg_id);
+		msg_id = packet_parser(pdata,buf,&ps);
+		message_decode(pdata,msg_id);
 	}
 }
 
@@ -279,16 +297,17 @@ void bootloader_handle_getver_cmd(bl_get_ver_t cmd)
 	ack.major = MAJOR_VER;
 	ack.minor = MINOR_VER;
 	ack.patch = PATCH_NUM; 
-	bl_mem_write_ack_encode(NULL,&ack,sizeof(ack));
+	bl_get_ver_ack_encode(NULL,&ack,sizeof(ack));
 	uart_send(&ack,sizeof(ack));
 }
-
 
 void bootloader_handle_getcid_cmd(bl_get_id_t cmd){
 	bl_get_id_ack_t ack;
 	ack.chip_id = 0xffffffff;
-	bl_get_id_encode(NULL,&ack,sizeof(ack));
+	bl_get_id_ack_encode(NULL,&ack,sizeof(ack));
+	uart_send(&ack,sizeof(ack));
 }
+
 
 void bootloader_handle_mem_read_cmd(bl_mem_read_t cmd){
 	bl_mem_read_ack_t ack;
@@ -314,9 +333,10 @@ void bootloader_handle_mem_read_cmd(bl_mem_read_t cmd){
 	{
 		ack.data[i] = flash_read_buf[i];
 	}
-	bl_mem_read_encode(NULL,&ack,sizeof(ack));
+	ack.read_length = 128;
+	bl_mem_read_ack_encode(NULL,&ack,sizeof(ack));
+
 	uart_send(&ack,sizeof(ack));
-	delay_ms(10);
 }
 
 
@@ -342,6 +362,7 @@ void bootloader_handle_mem_write_cmd(bl_mem_write_t cmd)
 			break;
 	}
 	bl_mem_write_ack_encode(NULL,&ack,sizeof(ack));
+
 	uart_send(&ack,sizeof(ack));
 }
 
@@ -367,13 +388,15 @@ void bootloader_flash_erase_cmd(bl_mem_erase_t cmd){
 }
 
 
-void bootloader_handle_reset_cmd(void){
-	
-	
-	// cortex M4 software reset
+void bootloader_handle_reset_cmd(bl_reset_t cmd){
+	bl_reset_ack_t ack;
+	ack.valid = 0x00;
+	bl_reset_ack_encode(NULL,&ack,sizeof(ack));
+	uart_send(&ack,sizeof(ack));
+	gpio_set_pin_level(BUSY_PIN,true);
 	SCB->AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;
+	// cortex M4 software reset
 	//SCB_AIRCR = SCB_AIRCR_VECTKEY(0x5FA) | SCB_AIRCR_SYSRESETREQ_MASK;
-	
 }
 
 void bootloader_handle_verify_cmd(bl_verify_t cmd){
@@ -385,20 +408,32 @@ uint8_t packet_parser(uint8_t* buf,uint8_t data,parse_state_t* ps){
 	err_t  err;
 	uint8_t err_buf[10];
 	uint32_t crc_val;
+	uint8_t ret;
+	uint8_t i=0;
+	//uint8_t start_idx;
+	
 	buf[ps->rx_index] = data;
 	
 	switch (ps->state)
 	{
 		case PARSE_STATE_START:
-		if (buf[ps->rx_index] == 0x55)
+		
+		for (i=0;i<PACK_LEN;i++)
+		{
+			if(buf[i] == 0x55){
+				ps->start_idx = i;
+				break;
+			}
+		}
+		if(buf[ps->start_idx] == 0x55)
 		{
 			ps->state = PARSE_STATE_LEN;
 		}
 		break;
 		case PARSE_STATE_LEN:
-		if(buf[ps->rx_index]<250)   //packet should be smaller than 255 bytes
+		if(buf[ps->start_idx+1]<PACK_LEN)   //packet should be smaller than 255 bytes
 		{
-			ps->data_len = buf[ps->rx_index];
+			ps->data_len = buf[ps->start_idx+1];
 			ps->state = PARSE_STATE_DATA;
 		}
 		break;
@@ -407,21 +442,21 @@ uint8_t packet_parser(uint8_t* buf,uint8_t data,parse_state_t* ps){
 		if(ps->now_idx == ps->data_len)
 		{
 			ps->state = PARSE_STATE_CHECK;
-			uint8_t ind = (ps->data_len+2) - PACK_CRC_LEN;
-
+			uint8_t ind = ps->start_idx + (ps->data_len+2) - PACK_CRC_LEN;
+			uint8_t len = (ps->data_len+2)- PACK_CRC_LEN;
 			crc_val =(uint32_t)(buf[ind+0]<<0)  +
-			(uint32_t)(buf[ind+1]<<8)  +
-			(uint32_t)(buf[ind+2]<<16) +
-			(uint32_t)(buf[ind+3]<<24);
+			(uint32_t)(buf[ ind+1]<<8)  +
+			(uint32_t)(buf[ ind+2]<<16) +
+			(uint32_t)(buf[ ind+3]<<24);
 
-			if(sum32(buf,ind) == crc_val){
+			if(sum32(&buf[ps->start_idx],len) == crc_val){
+				ps->start_idx = 0;
 				ps->rx_index = 0;
 				ps->now_idx = 0;
 				ps->data_len = 0;
 				ps->state = PARSE_STATE_START;
-				
-				return buf[2];
-				}else{
+				return buf[ps->start_idx+2];
+			}else{
 				
 				ps->rx_index = 0;
 				ps->now_idx = 0;
@@ -430,6 +465,7 @@ uint8_t packet_parser(uint8_t* buf,uint8_t data,parse_state_t* ps){
 				//send error ack
 				err_encode(err_buf,&err,sizeof(err));
 				uart_send(&err,sizeof(err));
+			
 			}
 		}
 		break;

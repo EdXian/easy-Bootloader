@@ -639,6 +639,13 @@ drivers:
           core_gclk_selection: Generic clock generator 0
           slow_gclk_selection: Generic clock generator 3
 pads:
+  busy_pin:
+    name: PA12
+    definition: Atmel:SAMC21_Drivers:0.0.1::SAMC21J18A-AN::pad::PA12
+    mode: Digital output
+    user_label: busy_pin
+    configuration:
+      pad_initial_level: High
   boot_pin:
     name: PA13
     definition: Atmel:SAMC21_Drivers:0.0.1::SAMC21J18A-AN::pad::PA13

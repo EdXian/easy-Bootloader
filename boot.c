@@ -158,13 +158,13 @@ uint32_t checksum){
 void bl_mem_read_ack_config(bl_mem_read_ack_t* pack,
 header_t header,
 uint8_t valid,
-uint8_t length,
+uint8_t read_length,
 uint8_t data[128],
 uint32_t checksum){
 	
 	pack->header = header;
 	pack->valid = valid;
-	pack->length = length;
+	pack->read_length = read_length;
 	pack->data[128] = data[128];
 	pack->checksum = checksum;
 
@@ -424,28 +424,4 @@ uint8_t packet_parser(uint8_t* buf,uint8_t data,parse_state_t* ps){
 	ps->rx_index++;
 	return 0;
 }
-
-__attribute__ ((weak))
-uint8_t message_decode(uint8_t* buf,uint8_t msg_id){
-	switch (msg_id)
-	{
-		case 1:
-		
-		memset(buf,0,200);
-		break;
-		
-		case 2:
-		
-		memset(buf,0,200);
-		break;
-		
-		case 3:
-		
-		memset(buf,0,200);
-		break;
-		
-	}
-}
-
-
 

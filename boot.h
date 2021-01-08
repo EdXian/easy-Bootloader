@@ -56,6 +56,7 @@ typedef struct parse_state{
 	uint8_t rx_index;
 	uint8_t state;
 	uint8_t data_len;
+	uint8_t start_idx;
 }parse_state_t;
 
 
@@ -264,7 +265,7 @@ typedef struct bl_mem_read_ack_struct{
 
 	header_t header;
 	uint8_t valid;
-	uint8_t length;
+	uint8_t read_length;
 	uint8_t data[128];
 	uint32_t checksum;
 
